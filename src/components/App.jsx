@@ -1,66 +1,63 @@
 import { nanoid } from "nanoid";
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { Form } from "./Form/Form";
 import { Filter } from "./Filter/Filter";
 import { List } from "./List/List";
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: ''
-  }
-
-  componentDidMount() {
+export const App = () => {
+  const [contacts, setContacts] = useState(() => {
     const getContacts = localStorage.getItem('contacts')
     if (getContacts) {
-      this.setState({ contacts: JSON.parse(getContacts) })
+      return JSON.parse(getContacts)
     }
-  }
+    return []
+  })
+  const [filter, setFilter] = useState('');
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts))
-    }
-  }
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts))
+  }, [contacts]);
 
-  handleFormSubmit = ({ name, number }) => {
+  const handleFormSubmit = ({ name, number }) => {
     const newContact = {
       id: nanoid(),
       name,
       number
     }
 
-    this.setState(prev => ({
-      contacts: [...prev.contacts, newContact]
-    }));
+    const lowerCaseName = name.toLowerCase()
+
+    if (contacts.find(contact => contact.name.toLowerCase() === lowerCaseName)) {
+      alert('this name is already taken')
+      return
+    }
+
+    setContacts(prev => [...prev, newContact])
   }
 
-  handleFilterChange = e => {
-    this.setState({ filter: e.target.value })
+  const handleFilterChange = e => {
+    setFilter(e.target.value)
   }
 
-  handleDelete = id => {
-    this.setState(prev => ({
-      contacts: prev.contacts.filter(contact => contact.id !== id)
-    }))
+  const handleDelete = id => {
+    setContacts(prev => prev.filter(contact => contact.id !== id))
   }
 
 
-  getFilteredContacts = () => {
-    return this.state.contacts.filter(contact =>
-      contact.name.toLowerCase().includes(this.state.filter.toLowerCase())
+  const getFilteredContacts = () => {
+    return contacts.filter(contact =>
+      contact.name.toLowerCase().includes(filter.toLowerCase())
     )
   }
 
-  render() {
     return (
       <div className="container">
         <h1>Phonebook</h1>
-        <Form fromSubmit={this.handleFormSubmit} />
+        <Form fromSubmit={handleFormSubmit} />
         <h2>Contacts</h2>
-        <Filter value={this.state.filter} onChange={this.handleFilterChange} />
-        <List contacts={this.getFilteredContacts()} onDelete={this.handleDelete} />
+        <Filter value={filter} onChange={handleFilterChange} />
+        <List contacts={getFilteredContacts()} onDelete={handleDelete} />
       </div>
     )
-  }
+  
 }
